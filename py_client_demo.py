@@ -20,7 +20,7 @@ def parse_data (data):
 		stop_data = graph_data.get("stop", None)
 
 		if stop_data is not None:
-			print(stop_data.keys())
+
 			parsed_data["stop_name"] = stop_data.get("name", "")
 			parsed_data["stop_code"] = stop_data.get("code", "")
 
@@ -45,9 +45,12 @@ def parse_data (data):
 					routes.append(route_dict)
 
 				parsed_data["routes"] = routes
+		else:
+			print(f"Invalid GTFS Id")
+			return
 
-	print(parsed_data)
-	print(bus_lines)
+	print(f"Parsed data\n{parsed_data}")
+	print(f"Bus Lines\n{bus_lines}")
 
 
 def run_query(gtfs_id):
@@ -92,6 +95,7 @@ def run_query(gtfs_id):
 
 def main():
 	#gtfs_id = "HSL:2143202"
+	#gtfs_id = "HSL:1140447"
 	gtfs_id = "123456"
 	run_query(gtfs_id)
 
