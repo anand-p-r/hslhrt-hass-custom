@@ -1,5 +1,6 @@
 from python_graphql_client import GraphqlClient
 import asyncio
+import datetime
 
 url = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql"
 
@@ -25,8 +26,9 @@ def parse_data (data):
 			parsed_data["stop_code"] = stop_data.get("code", "")
 
 			bus_lines = stop_data.get("routes", None)
+
 			route_data = stop_data.get("stoptimesWithoutPatterns", None)
-			print(route_data)
+			#print(route_data)
 
 			if route_data is not None:
 
@@ -36,12 +38,29 @@ def parse_data (data):
 					arrival = route.get("realtimeArrival", None)
 
 					if arrival == None:
-						route_dict["arrival"] = route.get("scheduledArrival", 0)
-					else:
-						route_dict["arrival"] = arrival
+						arrival = route.get("scheduledArrival", 0)
 
-
+					route_dict["arrival"] = str(datetime.timedelta(seconds=arrival))
+					
 					route_dict["destination"] = route.get("headsign", "")
+
+					if route_dict["destination"] != "":
+						for bus in bus_lines:
+							patterns = bus.get("patterns", None)
+							line = bus.get("shortName", None)
+
+							if line is None:
+								continue
+
+							if patterns is None:
+								continue
+
+							for pattern in patterns:
+								headsign = pattern.get("headsign", "")
+								if headsign != "":
+									if headsign.lower() in route_dict["destination"].lower():
+										route_dict["route"] = line
+
 					routes.append(route_dict)
 
 				parsed_data["routes"] = routes
@@ -50,7 +69,7 @@ def parse_data (data):
 			return
 
 	print(f"Parsed data\n{parsed_data}")
-	print(f"Bus Lines\n{bus_lines}")
+	#print(f"Bus Lines\n{bus_lines}")
 
 
 def run_query(gtfs_id):
@@ -95,8 +114,8 @@ def run_query(gtfs_id):
 
 def main():
 	#gtfs_id = "HSL:2143202"
-	#gtfs_id = "HSL:1140447"
-	gtfs_id = "123456"
+	gtfs_id = "HSL:1140447"
+	#gtfs_id = "123456"
 	run_query(gtfs_id)
 
 if __name__ == "__main__":

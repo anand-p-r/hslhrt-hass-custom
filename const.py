@@ -1,5 +1,6 @@
 """Constants for the FMI Weather and Sensor integrations."""
 import logging
+from datetime import timedelta
 
 _LOGGER = logging.getLogger(__package__)
 
@@ -17,14 +18,51 @@ ATTRIBUTION = "Real Time Route Info by HSL HRT"
 
 BASE_URL = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql"
 
-GTFS_ID = "GTFS_ID"
-ROUTE = "ROUTE"
+GTFS_ID = "gtfsid"
+ROUTE = "route"
+ALL = "all"
+
+ATTR_ROUTE = "ROUTE"
+ATTR_DEST = "DESTINATION"
+ATTR_ARR_TIME = "ARRIVAL TIME"
+
+ATTRIBUTION = "Data provided by Helsinki Regional Transport(HSL HRT)"
 
 STOP_CHECK_QUERY =  """
-        query ($id: String!) {
-            stop (id: $id) {
-                name
-                code
-            }
+    query ($id: String!) {
+        stop (id: $id) {
+            name
+            code
+			routes {
+		  		shortName
+			}
         }
-    """
+    }
+	"""
+
+ROUTE_QUERY = """
+    query ($id: String!) {
+		stop (id: $id) {
+			name
+			code
+			routes {
+		  		shortName
+		  		patterns {
+					headsign
+		  		}
+			}
+			stoptimesWithoutPatterns {
+				scheduledArrival
+	  			realtimeArrival
+	  			arrivalDelay
+	  			scheduledDeparture
+	  			realtimeDeparture
+	  			departureDelay
+	  			realtime
+	  			realtimeState
+	  			serviceDay
+				headsign
+			}
+		}
+	}
+	"""

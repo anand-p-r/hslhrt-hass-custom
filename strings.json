@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "HSL-HRT Configuration Parameters",
+        "title": "Helsinki Regional Transport",
+        "data": {
+          "name": "[%key:common::config_flow::data::name%]",
+          "gtfsid": "GTFS ID",
+          "route": "Route"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "unknown": "[%key:common::config_flow::error::unknown%]"
+    },
+    "abort": {
+      "already_configured": "Already configured stop/route"
+    }
+  }
+}

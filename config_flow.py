@@ -6,11 +6,15 @@ from homeassistant import config_entries, core
 from homeassistant.core import callback
 from homeassistant.helpers import config_validation as cv
 
-from . import base_unique_id, graph_client, stop_check_query
+from . import base_unique_id, graph_client
+
 from .const import (
     _LOGGER,
     STOP_CHECK_QUERY,
-    DOMAIN
+    DOMAIN,
+    GTFS_ID,
+    ALL,
+    ROUTE
 )
 
 
@@ -20,6 +24,7 @@ async def validate_user_config(hass: core.HomeAssistant, data):
     Data contains GTFS ID provided by user.
     """
     gtfs_id = data[GTFS_ID]
+    route = data[ROUTE]
 
     errors = ""
 
@@ -38,7 +43,7 @@ async def validate_user_config(hass: core.HomeAssistant, data):
         errors = "client_connect_error"
         _LOGGER.error(err_string)
 
-        return {"stop": "None", "err": errors}
+        return {"stop": None, "route": None, "err": errors}
 
     data_dict = hsl_data.get("data", None)
 
@@ -47,16 +52,28 @@ async def validate_user_config(hass: core.HomeAssistant, data):
 
         if stop_data is not None:
             stop_name = stop_data.get("name", "")
-                if stop_name != "":
-                    return {"stop": stop_name, "err": ""}
+            if stop_name != "":
+                ret_route = None
+                if route.lower() != ALL:
+                    routes = stop_data.get("routes", None)
+                    if routes is not None:
+                        for rt in routes:
+                            rt_name = rt.get("shortName", "")
+                            if rt_name != "":
+                                if rt_name.lower() == route.lower():
+                                    ret_route = route
                 else:
-                    errors = "stop_data=<blank>" 
+                    ret_route = route
+
+                return {"stop": stop_name, "route": ret_route, "err": ""}
+            else:
+                errors = "stop_data=<blank>" 
         else:
             errors = "stop_data=None"
     else:
         errors = "data=None"
 
-    return {"stop": "None", "err": errors}
+    return {"stop": None, "route": None, "err": errors}
 
 
 class HSLHRTConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
@@ -79,7 +96,8 @@ class HSLHRTConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             valid = await validate_user_config(self.hass, user_input)
 
             if valid.get("err", "") == "":
-                return self.async_create_entry(title=valid["stop"], data=user_input)
+                title = f"{valid['stop']} {valid['route']}"
+                return self.async_create_entry(title=title, data=user_input)
 
             errors[DOMAIN] = valid["err"]
 
@@ -94,37 +112,4 @@ class HSLHRTConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=data_schema,
             errors=errors,
-        )
-
-    @staticmethod
-    @callback
-    def async_get_options_flow(config_entry):
-        """Options callback for HSL HRT."""
-        return HSLHRTOptionsFlowHandler(config_entry)
-
-
-class HSLHRTOptionsFlowHandler(config_entries.OptionsFlow):
-    """Config flow options for HSL HRT."""
-
-    def __init__(self, config_entry):
-        """Initialize HSLHRT options flow."""
-        self.config_entry = config_entry
-
-    async def async_step_init(self, user_input=None):
-        """Manage the options."""
-        return await self.async_step_user()
-
-    async def async_step_user(self, user_input=None):
-        """Handle a flow initialized by the user."""
-        if user_input is not None:
-            return self.async_create_entry(title="Route Options", data=user_input)
-
-        return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema(
-                {
-                vol.Optional(ROUTE, default=self.config_entry.options.get(
-                    ROUTE, "ALL")): str
-                }
-            )
         )
