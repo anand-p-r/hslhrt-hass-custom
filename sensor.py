@@ -17,6 +17,8 @@ from .const import (
     ATTR_ROUTE,
     ATTR_DEST,
     ATTR_ARR_TIME,
+    ATTR_STOP_NAME,
+    ATTR_STOP_CODE,
     ATTRIBUTION,
     ALL
 )
@@ -68,7 +70,7 @@ class HSLHRTRouteSensor(CoordinatorEntity):
         """Return the name of the sensor."""
         if self._hsl is not None:
             if self._hsl.route_data is not None:
-                return f"{self._hsl.route_data['stop_name']} {self._hsl.route}"
+                return f"{self._hsl.route_data['stop_name']}({self._hsl.route_data['stop_code']}) {self._hsl.route}"
 
         return self._name
 
@@ -104,6 +106,8 @@ class HSLHRTRouteSensor(CoordinatorEntity):
                         }
                         for rt in self.filt_routes[1:]
                         ],
+                    ATTR_STOP_NAME: self._hsl.route_data["stop_name"],
+                    ATTR_STOP_CODE: self._hsl.route_data['stop_code'],
                     ATTR_ATTRIBUTION: ATTRIBUTION
                 }
         else:
@@ -120,6 +124,8 @@ class HSLHRTRouteSensor(CoordinatorEntity):
                         }
                         for rt in self._hsl.route_data["routes"][1:]
                         ],
+                    ATTR_STOP_NAME: self._hsl.route_data["stop_name"],
+                    ATTR_STOP_CODE: self._hsl.route_data['stop_code'],
                     ATTR_ATTRIBUTION: ATTRIBUTION
                 }
 
@@ -139,7 +145,7 @@ class HSLHRTRouteSensor(CoordinatorEntity):
         if len(self._hsl.route_data["routes"]) > 0:
             if self._hsl.route == ALL:
                 self._state = self._hsl.route_data["routes"][0]["route"]
-                self._icon = "mdi:city-variant"
+                self._icon = "mdi:bus"
                 self.filt_routes = None
                 return
             else:
@@ -150,8 +156,9 @@ class HSLHRTRouteSensor(CoordinatorEntity):
 
                 if len(self.filt_routes) > 0:
                     self._state = self.filt_routes[0]["route"]
-                    self._icon = "mdi:city-variant"
+                    self._icon = "mdi:bus"
                     return
+                _LOGGER.error(filt_routes)
         else:
             self._state = None
 

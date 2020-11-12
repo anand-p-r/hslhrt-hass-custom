@@ -137,7 +137,7 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
                             route_dict = {}
                             arrival = route.get("realtimeArrival", None)
 
-                            if arrival == None:
+                            if arrival is None:
                             	arrival = route.get("scheduledArrival", 0)
 
                             route_dict["arrival"] = str(datetime.timedelta(seconds=arrival))
@@ -174,16 +174,20 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             async with timeout(10):
 
-            	variables = {"id": self.gtfs_id.upper()}
+                # Find all the trips for the day
+                now = datetime.datetime.now()
+                secs_passed = (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
+                sec_left_in_day = (24*60*60) - secs_passed
+                variables = {"id": self.gtfs_id.upper(), "sec_left_in_day": int(sec_left_in_day)}
 
-            	# Asynchronous request
-            	data = await self._hass.async_add_executor_job(
-            		graph_client.execute, ROUTE_QUERY, variables
-            		)
+                # Asynchronous request
+                data = await self._hass.async_add_executor_job(
+                    graph_client.execute, ROUTE_QUERY, variables
+                )
             	
-            	self.route_data, self.lines = parse_data(data)
-            	_LOGGER.debug(f"DATA: {self.route_data} - {self.lines}")
-
+                self.route_data, self.lines = parse_data(data)
+                _LOGGER.debug(f"DATA: {self.route_data} - {self.lines}")
+                
         except Exception as error:
             raise UpdateFailed(error) from error
-        return {}
+            return {}

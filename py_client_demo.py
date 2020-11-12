@@ -78,7 +78,7 @@ def run_query(gtfs_id):
 
 	# Create the query string and variables required for the request.
 	query = """
-	    query ($id: String!) {
+	    query ($id: String!, $sec_left_in_day: Int!) {
 			stop (id: $id) {
 				name
 				code
@@ -88,7 +88,7 @@ def run_query(gtfs_id):
 						headsign
 			  		}
 				}
-				stoptimesWithoutPatterns {
+				stoptimesWithoutPatterns (numberOfDepartures: 500, timeRange: $sec_left_in_day){
 					scheduledArrival
 		  			realtimeArrival
 		  			arrivalDelay
@@ -104,7 +104,12 @@ def run_query(gtfs_id):
 		}
 	"""
 
-	variables = {"id": gtfs_id.upper()}
+	now = datetime.datetime.now()
+	secs_passed = (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
+	sec_left_in_day = (24*60*60) - secs_passed
+	print(sec_left_in_day)
+
+	variables = {"id": gtfs_id.upper(), "sec_left_in_day": int(sec_left_in_day)}
 
 	# Asynchronous request
 	data = asyncio.run(g_client.execute_async(query=query, variables=variables))

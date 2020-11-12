@@ -25,6 +25,9 @@ ALL = "all"
 ATTR_ROUTE = "ROUTE"
 ATTR_DEST = "DESTINATION"
 ATTR_ARR_TIME = "ARRIVAL TIME"
+ATTR_STOP_NAME = "STOP NAME"
+ATTR_STOP_CODE = "STOP CODE"
+
 
 ATTRIBUTION = "Data provided by Helsinki Regional Transport(HSL HRT)"
 
@@ -41,7 +44,7 @@ STOP_CHECK_QUERY =  """
 	"""
 
 ROUTE_QUERY = """
-    query ($id: String!) {
+    query ($id: String!, $sec_left_in_day: Int!) {
 		stop (id: $id) {
 			name
 			code
@@ -51,7 +54,7 @@ ROUTE_QUERY = """
 					headsign
 		  		}
 			}
-			stoptimesWithoutPatterns {
+			stoptimesWithoutPatterns (numberOfDepartures: 500, timeRange: $sec_left_in_day){
 				scheduledArrival
 	  			realtimeArrival
 	  			arrivalDelay
@@ -65,4 +68,4 @@ ROUTE_QUERY = """
 			}
 		}
 	}
-	"""
+"""
