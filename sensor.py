@@ -12,26 +12,34 @@ from .const import (
     _LOGGER,
     DOMAIN,
     COORDINATOR,
-    GTFS_ID,
     ROUTE_QUERY,
+    STOP_GTFS,
+    STOP_NAME,
+    STOP_CODE,
+    ROUTE,
     ATTR_ROUTE,
     ATTR_DEST,
     ATTR_ARR_TIME,
     ATTR_STOP_NAME,
     ATTR_STOP_CODE,
+    ATTR_STOP_GTFS,
+    DICT_KEY_ROUTE,
+    DICT_KEY_ROUTES,
+    DICT_KEY_DEST,
+    DICT_KEY_ARRIVAL,
     ATTRIBUTION,
     ALL
 )
 
 SENSOR_TYPES = {
-    "route": ["Route", None]
+    ROUTE: ["Route", None]
 }
 
 PARALLEL_UPDATES = 1
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the HSL HRT Sensor."""
-    name = config_entry.data[GTFS_ID]
+    name = config_entry.data.get(STOP_GTFS, "")
 
     coordinator = hass.data[DOMAIN][config_entry.entry_id][COORDINATOR]
 
@@ -92,40 +100,68 @@ class HSLHRTRouteSensor(CoordinatorEntity):
     @property
     def device_state_attributes(self):
         """Return the state attributes."""
-
+        
+        dest_string = "Unavailable"
         if self.filt_routes is not None and len(self.filt_routes) > 0:
-            return {
-                    ATTR_ROUTE: self.filt_routes[0]["route"],
-                    ATTR_DEST: self.filt_routes[0]["destination"],
-                    ATTR_ARR_TIME: self.filt_routes[0]["arrival"],
-                    "ROUTES": [
-                        {
-                            ATTR_ROUTE: rt["route"],
-                            ATTR_DEST: rt["destination"],
-                            ATTR_ARR_TIME: rt["arrival"]
+        
+            if self.filt_routes[0][DICT_KEY_DEST] is not None:
+                dest_string = self.filt_routes[0][DICT_KEY_DEST]
+
+            routes = []
+            for rt in self.filt_routes[1:]:
+        
+                dest_str = "Unavailable"
+                if rt[DICT_KEY_DEST] is not None:
+                    dest_str = rt[DICT_KEY_DEST]
+                
+                route = {
+                            ATTR_ROUTE: rt[DICT_KEY_ROUTE],
+                            ATTR_DEST: dest_str,
+                            ATTR_ARR_TIME: rt[DICT_KEY_ARRIVAL]
                         }
-                        for rt in self.filt_routes[1:]
-                        ],
-                    ATTR_STOP_NAME: self._hsl.route_data["stop_name"],
-                    ATTR_STOP_CODE: self._hsl.route_data['stop_code'],
+
+                routes.append(route)
+
+            return {
+                    ATTR_ROUTE: self.filt_routes[0][DICT_KEY_ROUTE],
+                    ATTR_DEST: dest_string,
+                    ATTR_ARR_TIME: self.filt_routes[0][DICT_KEY_ARRIVAL],
+                    "ROUTES": routes,
+                    ATTR_STOP_NAME: self._hsl.route_data[STOP_NAME],
+                    ATTR_STOP_CODE: self._hsl.route_data[STOP_CODE],
+                    ATTR_STOP_GTFS: self._hsl.route_data[STOP_GTFS],
                     ATTR_ATTRIBUTION: ATTRIBUTION
                 }
         else:
-            if self._hsl is not None and len(self._hsl.route_data["routes"]) > 0:
+            if self._hsl is not None and len(self._hsl.route_data[DICT_KEY_ROUTES]) > 0:
+                
+                dest_str = "Unavailable"
+        
+                if self._hsl.route_data[DICT_KEY_ROUTES][0][DICT_KEY_DEST] is not None:
+                    dest_str = self._hsl.route_data[DICT_KEY_ROUTES][0][DICT_KEY_DEST]
+
+                routes = []
+                for rt in self._hsl.route_data[DICT_KEY_ROUTES][1:]:
+                    dest_str = "Unavailable"
+
+                    if rt[DICT_KEY_DEST] is not None:
+                        dest_str = rt[DICT_KEY_DEST]
+
+                    route = {
+                                ATTR_ROUTE: rt[DICT_KEY_ROUTE],
+                                ATTR_DEST: dest_str,
+                                ATTR_ARR_TIME: rt[DICT_KEY_ARRIVAL]
+                            }
+                    routes.append(route)
+
                 return {
-                    ATTR_ROUTE: self._hsl.route_data["routes"][0]["route"],
-                    ATTR_DEST: self._hsl.route_data["routes"][0]["destination"],
-                    ATTR_ARR_TIME: self._hsl.route_data["routes"][0]["arrival"],
-                    "ROUTES": [
-                        {
-                            ATTR_ROUTE: rt["route"],
-                            ATTR_DEST: rt["destination"],
-                            ATTR_ARR_TIME: rt["arrival"]
-                        }
-                        for rt in self._hsl.route_data["routes"][1:]
-                        ],
-                    ATTR_STOP_NAME: self._hsl.route_data["stop_name"],
-                    ATTR_STOP_CODE: self._hsl.route_data['stop_code'],
+                    ATTR_ROUTE: self._hsl.route_data[DICT_KEY_ROUTES][0][DICT_KEY_ROUTE],
+                    ATTR_DEST: dest_str,
+                    ATTR_ARR_TIME: self._hsl.route_data[DICT_KEY_ROUTES][0][DICT_KEY_ARRIVAL],
+                    "ROUTES": routes,
+                    ATTR_STOP_NAME: self._hsl.route_data[STOP_NAME],
+                    ATTR_STOP_CODE: self._hsl.route_data[STOP_CODE],
+                    ATTR_STOP_GTFS: self._hsl.route_data[STOP_GTFS],
                     ATTR_ATTRIBUTION: ATTRIBUTION
                 }
 
@@ -142,23 +178,22 @@ class HSLHRTRouteSensor(CoordinatorEntity):
             self._state = None
             return
 
-        if len(self._hsl.route_data["routes"]) > 0:
-            if self._hsl.route == ALL:
-                self._state = self._hsl.route_data["routes"][0]["route"]
+        if len(self._hsl.route_data[DICT_KEY_ROUTES]) > 0:
+            if self._hsl.route.lower() == ALL.lower():
+                self._state = self._hsl.route_data[DICT_KEY_ROUTES][0][DICT_KEY_ROUTE]
                 self._icon = "mdi:bus"
                 self.filt_routes = None
                 return
             else:
                 self.filt_routes = []
-                for rt in self._hsl.route_data["routes"]:
-                    if self._hsl.route.lower() in rt["route"].lower():
+                for rt in self._hsl.route_data[DICT_KEY_ROUTES]:
+                    if self._hsl.route.lower() in rt[DICT_KEY_ROUTE].lower():
                         self.filt_routes.append(rt)
 
                 if len(self.filt_routes) > 0:
-                    self._state = self.filt_routes[0]["route"]
+                    self._state = self.filt_routes[0][DICT_KEY_ROUTE]
                     self._icon = "mdi:bus"
                     return
-                _LOGGER.error(filt_routes)
         else:
             self._state = None
 

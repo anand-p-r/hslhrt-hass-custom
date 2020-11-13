@@ -5,31 +5,55 @@ from datetime import timedelta
 _LOGGER = logging.getLogger(__package__)
 
 DOMAIN = "hslhrt"
-NAME = "HSLHRT"
+NAME = DEFAULT_NAME = "HSLHRT"
 MANUFACTURER = "Helsinki Regional Transport Authority"
 
 COORDINATOR = "coordinator"
 MIN_TIME_BETWEEN_UPDATES = timedelta(minutes=15)
 UNDO_UPDATE_LISTENER = "undo_update_listener"
 
-DEFAULT_NAME = "HSLHRT"
-
-ATTRIBUTION = "Real Time Route Info by HSL HRT"
-
 BASE_URL = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql"
 
-GTFS_ID = "gtfsid"
+NAME_CODE = "user_name_code"
+STOP_CODE = "stop_code"
+STOP_NAME = "stop_name"
+STOP_GTFS = "stop_gtfs"
 ROUTE = "route"
 ALL = "all"
+ERROR = "err"
+
+# Graphql variables
+VAR_NAME_CODE = "name_code"
+VAR_ID = "id"
+VAR_SECS_LEFT = "sec_left_in_day"
+
+# Dict keys
+DICT_KEY_ROUTE = "route"
+DICT_KEY_ROUTES = "routes"
+DICT_KEY_DEST = "destination"
+DICT_KEY_ARRIVAL = "arrival"
 
 ATTR_ROUTE = "ROUTE"
 ATTR_DEST = "DESTINATION"
 ATTR_ARR_TIME = "ARRIVAL TIME"
 ATTR_STOP_NAME = "STOP NAME"
 ATTR_STOP_CODE = "STOP CODE"
-
+ATTR_STOP_GTFS = "GTFS ID"
 
 ATTRIBUTION = "Data provided by Helsinki Regional Transport(HSL HRT)"
+
+STOP_ID_QUERY =  """
+    query ($name_code: String!) {
+        stops (name: $name_code) {
+            gtfsId
+            name
+            code
+			routes {
+		  		shortName
+			}
+        }
+    }
+	"""
 
 STOP_CHECK_QUERY =  """
     query ($id: String!) {
@@ -48,6 +72,7 @@ ROUTE_QUERY = """
 		stop (id: $id) {
 			name
 			code
+			gtfsId
 			routes {
 		  		shortName
 		  		patterns {

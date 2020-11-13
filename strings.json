@@ -6,7 +6,7 @@
         "title": "Helsinki Regional Transport",
         "data": {
           "name": "[%key:common::config_flow::data::name%]",
-          "gtfsid": "GTFS ID",
+          "namecode": "STOP Name / Code",
           "route": "Route"
         }
       }
@@ -16,7 +16,9 @@
       "unknown": "[%key:common::config_flow::error::unknown%]"
     },
     "abort": {
-      "already_configured": "Already configured stop/route"
+      "already_configured": "Already configured stop/route",
+      "invalid_name_code": "Stop Name or Stop Code is invalid!",
+      "invalid_route": "Route is invalid!"
     }
   }
 }

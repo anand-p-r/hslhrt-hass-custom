@@ -9,16 +9,24 @@ import datetime
 from python_graphql_client import GraphqlClient
 
 from .const import (
-	BASE_URL,
-	DOMAIN,
-	GTFS_ID,
-	ROUTE,
-	ROUTE_QUERY,
-	MIN_TIME_BETWEEN_UPDATES,
-	COORDINATOR,
-	UNDO_UPDATE_LISTENER,
-	ALL,
-	_LOGGER
+    BASE_URL,
+    DOMAIN,
+    STOP_NAME,
+    STOP_GTFS,
+    STOP_CODE,
+    ROUTE,
+    ROUTE_QUERY,
+    MIN_TIME_BETWEEN_UPDATES,
+    COORDINATOR,
+    UNDO_UPDATE_LISTENER,
+    DICT_KEY_ROUTE,
+    DICT_KEY_ROUTES,
+    DICT_KEY_DEST,
+    DICT_KEY_ARRIVAL,
+    ALL,
+    VAR_ID,
+    VAR_SECS_LEFT,
+    _LOGGER
 )
 
 
@@ -31,19 +39,20 @@ graph_client = GraphqlClient(endpoint=BASE_URL)
 def base_unique_id(gtfs_id, route=None):
     """Return unique id for entries in configuration."""
     if route is None or route.lower() == ALL:
-    	return f"{gtfs_id} all"
+        return f"{gtfs_id} all"
     else:
-    	return f"{gtfs_id} {route}"
+        return f"{gtfs_id} {route}"
 
 
 async def async_setup(hass: HomeAssistant, config: Config) -> bool:
-    """Set up configured FMI."""
+    """Set up configured HSL HRT."""
     hass.data.setdefault(DOMAIN, {})
     return True
 
 
 async def async_setup_entry(hass, config_entry) -> bool:
     """Set up HSLHRT as config entry."""
+
     websession = async_get_clientsession(hass)
 
     coordinator = HSLHRTDataUpdateCoordinator(
@@ -91,12 +100,11 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, session, config_entry):
         """Initialize."""
 
-        _LOGGER.debug("Using gtfs_id: %s and route: %s", 
-            config_entry.data[GTFS_ID], config_entry.data[ROUTE])
+        _LOGGER.debug("Using Name/Code: %s and route: %s", 
+            config_entry.data[STOP_NAME], config_entry.data[ROUTE])
 
-        self.gtfs_id = config_entry.data[GTFS_ID]
-        self.route = config_entry.data[ROUTE].lower()
-        self.unique_id = str(self.gtfs_id) + ":" + str(self.route)
+        self.gtfs_id = config_entry.data.get(STOP_GTFS, "")
+        self.route = config_entry.data.get(ROUTE, "")
 
         self.route_data = None
         self.lines = None
@@ -124,8 +132,9 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
 
                 if hsl_stop_data is not None:
 
-                    parsed_data["stop_name"] = hsl_stop_data.get("name", "")
-                    parsed_data["stop_code"] = hsl_stop_data.get("code", "")
+                    parsed_data[STOP_NAME] = hsl_stop_data.get("name", "")
+                    parsed_data[STOP_CODE] = hsl_stop_data.get("code", "")
+                    parsed_data[STOP_GTFS] = hsl_stop_data.get("gtfsId", "")
 
                     bus_lines = hsl_stop_data.get("routes", None)
                     route_data = hsl_stop_data.get("stoptimesWithoutPatterns", None)
@@ -138,33 +147,36 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
                             arrival = route.get("realtimeArrival", None)
 
                             if arrival is None:
-                            	arrival = route.get("scheduledArrival", 0)
+                                arrival = route.get("scheduledArrival", 0)
 
-                            route_dict["arrival"] = str(datetime.timedelta(seconds=arrival))
-                            route_dict["destination"] = route.get("headsign", "")
+                            route_dict[DICT_KEY_ARRIVAL] = str(datetime.timedelta(seconds=arrival))
+                            route_dict[DICT_KEY_DEST] = route.get("headsign", "")
 
-                            route_dict["route"] = ""
-                            if route_dict["destination"] != "":
-                            	for bus in bus_lines:
-                            		patterns = bus.get("patterns", None)
-                            		line = bus.get("shortName", None)
+                            route_dict[DICT_KEY_ROUTE] = ""
+                            if route_dict[DICT_KEY_DEST] != "":
+                                for bus in bus_lines:
+                                    patterns = bus.get("patterns", None)
+                                    line = bus.get("shortName", None)
 
-                            		if line is None:
-                            			continue
+                                    if line is None:
+                                        continue
 
-                            		if patterns is None:
-                            			continue
+                                    if patterns is None:
+                                        continue
 
-                            		for pattern in patterns:
-                            			headsign = pattern.get("headsign", "")
-                            			if headsign != "":
-                            				if headsign.lower() in route_dict["destination"].lower():
-                            					route_dict["route"] = line
+                                    for pattern in patterns:
+                                        headsign = pattern.get("headsign", None)
+
+                                        if headsign is not None:
+                                            dest_string = route_dict[DICT_KEY_DEST]
+                                            if headsign is not None and dest_string is not None:
+                                                if headsign.lower() in dest_string.lower():
+                                                    route_dict[DICT_KEY_ROUTE] = line
 
 
                             routes.append(route_dict)
 
-                        parsed_data["routes"] = routes
+                        parsed_data[DICT_KEY_ROUTES] = routes
                 else:
                     _LOGGER.error("Invalid GTFS Id")
                     return
@@ -178,13 +190,13 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
                 now = datetime.datetime.now()
                 secs_passed = (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
                 sec_left_in_day = (24*60*60) - secs_passed
-                variables = {"id": self.gtfs_id.upper(), "sec_left_in_day": int(sec_left_in_day)}
+                variables = {VAR_ID: self.gtfs_id.upper(), VAR_SECS_LEFT: int(sec_left_in_day)}
 
                 # Asynchronous request
                 data = await self._hass.async_add_executor_job(
                     graph_client.execute, ROUTE_QUERY, variables
                 )
-            	
+                
                 self.route_data, self.lines = parse_data(data)
                 _LOGGER.debug(f"DATA: {self.route_data} - {self.lines}")
                 
