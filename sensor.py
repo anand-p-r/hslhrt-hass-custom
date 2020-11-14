@@ -180,10 +180,12 @@ class HSLHRTRouteSensor(CoordinatorEntity):
 
         if len(self._hsl.route_data[DICT_KEY_ROUTES]) > 0:
             if self._hsl.route.lower() == ALL.lower():
-                self._state = self._hsl.route_data[DICT_KEY_ROUTES][0][DICT_KEY_ROUTE]
-                self._icon = "mdi:bus"
-                self.filt_routes = None
-                return
+                for rt in self._hsl.route_data[DICT_KEY_ROUTES]:
+                    if rt[DICT_KEY_ROUTE] != "":
+                        self._state = rt[DICT_KEY_ROUTE]
+                        self._icon = "mdi:bus"
+                        self.filt_routes = None
+                        return
             else:
                 self.filt_routes = []
                 for rt in self._hsl.route_data[DICT_KEY_ROUTES]:
@@ -191,9 +193,10 @@ class HSLHRTRouteSensor(CoordinatorEntity):
                         self.filt_routes.append(rt)
 
                 if len(self.filt_routes) > 0:
-                    self._state = self.filt_routes[0][DICT_KEY_ROUTE]
-                    self._icon = "mdi:bus"
-                    return
+                    for rt in self.filt_routes:
+                        self._state = rt[DICT_KEY_ROUTE]
+                        self._icon = "mdi:bus"
+                        return
         else:
             self._state = None
 
