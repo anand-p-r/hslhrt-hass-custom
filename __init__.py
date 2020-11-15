@@ -5,6 +5,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from async_timeout import timeout
 import datetime
+import time
 
 from python_graphql_client import GraphqlClient
 
@@ -25,6 +26,7 @@ from .const import (
     DICT_KEY_ARRIVAL,
     ALL,
     VAR_ID,
+    VAR_CURR_EPOCH,
     VAR_SECS_LEFT,
     _LOGGER
 )
@@ -107,7 +109,6 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
         self.route = config_entry.data.get(ROUTE, "")
 
         self.route_data = None
-        self.lines = None
         self._hass = hass
 
         _LOGGER.debug("Data will be updated every %s min", MIN_TIME_BETWEEN_UPDATES)
@@ -120,7 +121,7 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self):
         """Update data via HSl HRT Open API."""
 
-        def parse_data(data):
+        def parse_data(data, line_from_user = ""):
 
             parsed_data = {}
             bus_lines = {}
@@ -181,7 +182,31 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
                     _LOGGER.error("Invalid GTFS Id")
                     return
 
-                return parsed_data, bus_lines
+            time_line_parsed_data = []
+            if line_from_user.lower() != ALL.lower():
+                if line_from_user.lower() != "":
+                    routes = parsed_data.get(DICT_KEY_ROUTES, None)
+                    if routes is not None:
+                        for rt in routes:
+                            line_in_data = rt.get(DICT_KEY_ROUTE, None)
+                            if line_in_data is not None:
+                                if line_from_user.lower() == line_in_data.lower():
+                                    time_line_parsed_data.append(rt)
+
+                        parsed_data[DICT_KEY_ROUTES] = time_line_parsed_data
+            else:
+                routes = parsed_data.get(DICT_KEY_ROUTES, None)
+                if routes is not None:
+                    for rt in routes:
+                        line_in_data = rt.get(DICT_KEY_ROUTE, None)
+                        dest_in_data = rt.get(DICT_KEY_DEST, None)
+                        if line_in_data is not None and dest_in_data is not None:
+                            if line_in_data != "" and dest_in_data != "":
+                                time_line_parsed_data.append(rt)
+
+                    parsed_data[DICT_KEY_ROUTES] = time_line_parsed_data
+
+            return parsed_data
 
         try:
             async with timeout(10):
@@ -189,16 +214,20 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
                 # Find all the trips for the day
                 now = datetime.datetime.now()
                 secs_passed = (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
-                sec_left_in_day = (24*60*60) - secs_passed
-                variables = {VAR_ID: self.gtfs_id.upper(), VAR_SECS_LEFT: int(sec_left_in_day)}
+                sec_left_in_day = int((24*60*60) - secs_passed)
+                current_epoch = int(time.time())
+                variables = {
+                    VAR_ID: self.gtfs_id.upper(), 
+                    VAR_CURR_EPOCH: current_epoch, 
+                    VAR_SECS_LEFT: sec_left_in_day}
 
                 # Asynchronous request
                 data = await self._hass.async_add_executor_job(
                     graph_client.execute, ROUTE_QUERY, variables
                 )
-                
-                self.route_data, self.lines = parse_data(data)
-                _LOGGER.debug(f"DATA: {self.route_data} - {self.lines}")
+
+                self.route_data = parse_data(data, self.route)
+                _LOGGER.debug(f"DATA: {self.route_data}")
                 
         except Exception as error:
             raise UpdateFailed(error) from error

@@ -9,7 +9,7 @@ NAME = DEFAULT_NAME = "HSLHRT"
 MANUFACTURER = "Helsinki Regional Transport Authority"
 
 COORDINATOR = "coordinator"
-MIN_TIME_BETWEEN_UPDATES = timedelta(minutes=15)
+MIN_TIME_BETWEEN_UPDATES = timedelta(minutes=1)
 UNDO_UPDATE_LISTENER = "undo_update_listener"
 
 BASE_URL = "https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql"
@@ -26,6 +26,7 @@ ERROR = "err"
 VAR_NAME_CODE = "name_code"
 VAR_ID = "id"
 VAR_SECS_LEFT = "sec_left_in_day"
+VAR_CURR_EPOCH = "current_epoch"
 
 # Dict keys
 DICT_KEY_ROUTE = "route"
@@ -68,7 +69,7 @@ STOP_CHECK_QUERY =  """
 	"""
 
 ROUTE_QUERY = """
-    query ($id: String!, $sec_left_in_day: Int!) {
+    query ($id: String!, $current_epoch: Long!, $sec_left_in_day: Int!) {
 		stop (id: $id) {
 			name
 			code
@@ -79,7 +80,7 @@ ROUTE_QUERY = """
 					headsign
 		  		}
 			}
-			stoptimesWithoutPatterns (numberOfDepartures: 500, timeRange: $sec_left_in_day){
+			stoptimesWithoutPatterns (startTime: $current_epoch, numberOfDepartures: 500, timeRange: $sec_left_in_day){
 				scheduledArrival
 	  			realtimeArrival
 	  			arrivalDelay
