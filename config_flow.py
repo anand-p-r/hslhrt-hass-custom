@@ -31,8 +31,6 @@ async def validate_user_config(hass: core.HomeAssistant, data):
     name_code = data[NAME_CODE]
     route = data[ROUTE]
 
-    _LOGGER.error(route)
-
     errors = ""
     stop_code = None
     stop_name = None
@@ -70,14 +68,12 @@ async def validate_user_config(hass: core.HomeAssistant, data):
                 if stop_name != "" and stop_gtfs != "":
                     stop = stop_name
                     gtfs = stop_gtfs
-                    _LOGGER.error(route)
                     if route.lower() != ALL:
                         routes = stop_data.get("routes", None)
                         if routes is not None:
                             for rt in routes:
                                 rt_name = rt.get("shortName", "")
                                 if rt_name != "":
-                                    _LOGGER.error(rt_name)
                                     if rt_name.lower() == route.lower():
                                         ret_route = route    
                     else:
