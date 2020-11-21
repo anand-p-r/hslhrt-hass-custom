@@ -121,6 +121,7 @@ With a template sensor, more UI options are possible, such as displaying remaini
 ```
 
 On the dashboard it shows up as:
+
 ![Option-3](resources/images/ui-option-3.jpg?raw=true)
 
 
