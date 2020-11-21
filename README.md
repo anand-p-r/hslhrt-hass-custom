@@ -68,6 +68,62 @@ entities:
     name: Arrival Time
 ```
 
+#### Option-3
+With a template sensor, more UI options are possible, such as displaying remaining time until next arrival and next two upcoming arrival times as shown below:
+
+```
+  - platform: template
+    sensors:
+      next_route_1:
+        friendly_name: Next Route - 1
+        value_template: "{% if state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES') | length > 0 %}
+                           {{ state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES')[0]['ARRIVAL TIME'] }}
+                         {% else %}
+                           'No more lines today'
+                         {% endif %}"
+        attribute_templates:
+          route: "{% if state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES') | length > 0 %}
+                    {{ state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES')[0]['ROUTE'] }}
+                  {% else %}
+                    'Unavailable'
+                  {% endif %}"
+          destination: "{% if state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES') | length > 0 %}
+                          {{ state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES')[0]['DESTINATION'] }}
+                        {% else %}
+                          'Unavailable'
+                        {% endif %}"
+      next_route_2:
+        friendly_name: Next Route - 2
+        value_template: "{% if state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES') | length > 1 %}
+                           {{ state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES')[1]['ARRIVAL TIME'] }}
+                         {% else %}
+                           'No more lines today'
+                         {% endif %}"
+        attribute_templates:
+          route: "{% if state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES') | length > 1 %}
+                    {{ state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES')[1]['ROUTE'] }}
+                  {% else %}
+                    'Unavailable'
+                  {% endif %}"
+          destination: "{% if state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES') | length > 1 %}
+                          {{ state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES')[1]['DESTINATION'] }}
+                        {% else %}
+                          'Unavailable'
+                        {% endif %}"
+      time_remaining:
+        friendly_name: "Time Until Next Arrival"
+        value_template: "{% set curr_time = now().replace(tzinfo=None) %}
+                         {% set time_str = state_attr('sensor.henttaanaukio_e3313_533', 'ARRIVAL TIME') %}
+                         {% set time_obj = strptime(time_str, '%H:%M:%S') %}
+                         {% set right_time = time_obj.replace(year=curr_time.year, day=curr_time.day, month=curr_time.month) %}
+                         {% set td = right_time - curr_time %}
+                         {{ (td.seconds/3600) | int }}:{{ (td.seconds/60) | int }}:{{ (td.seconds%60) | int }}"
+```
+
+On the dashboard it shows up as:
+![Option-3](resources/images/ui-option-3.jpg?raw=true)
+
+
 **Note**: Sometimes the API query returns wierd results such as blank destinations or route numbers. If you see something like this, leave a comment and I can take a look at pruning the results further.
 
 ## Original Author
