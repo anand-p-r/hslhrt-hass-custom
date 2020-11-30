@@ -74,8 +74,8 @@ With a template sensor, more UI options are possible, such as displaying remaini
 ```
   - platform: template
     sensors:
-      next_route_1:
-        friendly_name: Next Route - 1
+      next_route_533_1:
+        friendly_name: Next 533 - 1
         value_template: "{% if state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES') != None %}
                            {% if state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES') | length > 0 %}
                              {{ state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES')[0]['ARRIVAL TIME'] }}
@@ -104,8 +104,8 @@ With a template sensor, more UI options are possible, such as displaying remaini
                         {% else %}
                           'Unavailable'
                         {% endif %}"
-      next_route_2:
-        friendly_name: Next Route - 2
+      next_route_533_2:
+        friendly_name: Next 533 - 2
         value_template: "{% if state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES') != None %}
                            {% if state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES') | length > 1 %}
                              {{ state_attr('sensor.henttaanaukio_e3313_533', 'ROUTES')[1]['ARRIVAL TIME'] }}
@@ -134,8 +134,8 @@ With a template sensor, more UI options are possible, such as displaying remaini
                         {% else %}
                           'Unavailable'
                         {% endif %}"
-      time_remaining:
-        friendly_name: "Time Until Next Arrival"
+      time_533_remaining:
+        friendly_name: "Time Until Next 533 Arrival"
         value_template: "{% if state_attr('sensor.henttaanaukio_e3313_533', 'ARRIVAL TIME') != None %}
                            {% set curr_time = now().replace(tzinfo=None) %}
                            {% set time_str = state_attr('sensor.henttaanaukio_e3313_533', 'ARRIVAL TIME') %}
