@@ -142,7 +142,7 @@ With a template sensor, more UI options are possible, such as displaying remaini
                            {% set time_obj = strptime(time_str, '%H:%M:%S') %}
                            {% set right_time = time_obj.replace(year=curr_time.year, day=curr_time.day, month=curr_time.month) %}
                            {% set td = right_time - curr_time %}
-                           {{ (td.seconds/3600) | int }}:{{ (td.seconds/60) | int }}:{{ (td.seconds%60) | int }}
+                           {{ td.seconds | int| timestamp_custom('%H:%M:%S', false) }}
                          {% else %}
                            'Unavailable'
                          {% endif %}"
