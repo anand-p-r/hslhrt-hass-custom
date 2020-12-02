@@ -91,6 +91,11 @@ ROUTE_QUERY = """
 	  			realtimeState
 	  			serviceDay
 				headsign
+				trip {
+					route {
+						shortName
+					}
+				}
 			}
 		}
 	}
