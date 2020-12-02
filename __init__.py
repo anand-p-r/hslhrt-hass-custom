@@ -152,28 +152,25 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
 
                             route_dict[DICT_KEY_ARRIVAL] = str(datetime.timedelta(seconds=arrival))
                             route_dict[DICT_KEY_DEST] = route.get("headsign", "")
-
+                            
                             route_dict[DICT_KEY_ROUTE] = ""
                             if route_dict[DICT_KEY_DEST] != "":
                                 for bus in bus_lines:
-                                    patterns = bus.get("patterns", None)
                                     line = bus.get("shortName", None)
 
                                     if line is None:
                                         continue
 
-                                    if patterns is None:
-                                        continue
-
-                                    for pattern in patterns:
-                                        headsign = pattern.get("headsign", None)
-
-                                        if headsign is not None:
-                                            dest_string = route_dict[DICT_KEY_DEST]
-                                            if headsign is not None and dest_string is not None:
-                                                if headsign.lower() in dest_string.lower():
+                                    # Check if the line and trip route names match for this
+                                    # schedule
+                                    trip = route.get("trip", "")
+                                    if trip != "":
+                                        trip_route = trip.get("route", "")
+                                        if trip_route != "":
+                                            trip_route_shortname = trip_route.get("shortName", "")
+                                            if trip_route_shortname != "":
+                                                if trip_route_shortname.lower() == line.lower():
                                                     route_dict[DICT_KEY_ROUTE] = line
-
 
                             routes.append(route_dict)
 
