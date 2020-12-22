@@ -19,7 +19,7 @@ Sensor provides real time arrival information of a `route` (bus/tram) if availab
 
 #### Option-1
 
-![Option-1](resources/images/ui-option-1.jpg?raw=true)
+![Option-1](custom_components/resources/images/ui-option-1.jpg?raw=true)
 
 ```
 type: entities
@@ -35,7 +35,7 @@ show_header_toggle: false
 
 #### Option-2
 
-![Option-2](resources/images/ui-option-2.jpg?raw=true)
+![Option-2](custom_components/resources/images/ui-option-2.jpg?raw=true)
 
 ```
 type: entities
@@ -150,7 +150,7 @@ With a template sensor, more UI options are possible, such as displaying remaini
 
 On the dashboard it shows up as:
 
-![Option-3](resources/images/ui-option-3.jpg?raw=true)
+![Option-3](custom_components/resources/images/ui-option-3.jpg?raw=true)
 
 
 **Note**: Sometimes the API query returns wierd results such as blank destinations or route numbers. If you see something like this, leave a comment and I can take a look at pruning the results further.
