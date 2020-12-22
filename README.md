@@ -4,9 +4,8 @@
 ## Installation
 
     1. Using a tool of choice open the directory (folder) for HA configuration (where you find configuration YAML file).
-    2. If "custom_components" directory does not exist, create one.
-    3. In the "custom_components" directory create a new folder called "hslhrt".
-    4. Download all the files from the this repository and place the files in the new directory created.
+    2. Download all the files from the this repository and place the files in this directory.
+    3. If the files are placed correctly, it should have the hierarchy as: <HA configuration directory>/custom_components/hslhrt
     5. Restart Home Assistant
     6. Install integration from UI (Configuration --> Intergations --> + --> Search for "hsl")
     7. Specify stop name (e.g. töölöntori) or stop code (e.g. H0209) and optionally the route number (e.g. 8) 
