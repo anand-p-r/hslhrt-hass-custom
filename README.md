@@ -358,7 +358,7 @@ entities:
   - sensor.next_route_v1530_4
 state_filter:
   - operator: '!='
-    value: '''NA'''
+    value: "'NA'"
 card:
   type: markdown
   content: >-
