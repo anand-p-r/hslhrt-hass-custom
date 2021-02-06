@@ -12,7 +12,6 @@ from .const import (
     _LOGGER,
     DOMAIN,
     COORDINATOR,
-    ROUTE_QUERY,
     STOP_GTFS,
     STOP_NAME,
     STOP_CODE,

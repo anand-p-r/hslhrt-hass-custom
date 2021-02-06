@@ -27,6 +27,7 @@ VAR_NAME_CODE = "name_code"
 VAR_ID = "id"
 VAR_SECS_LEFT = "sec_left_in_day"
 VAR_CURR_EPOCH = "current_epoch"
+VAR_LIMIT = "limit"
 
 # Dict keys
 DICT_KEY_ROUTE = "route"
@@ -42,6 +43,9 @@ ATTR_STOP_CODE = "STOP CODE"
 ATTR_STOP_GTFS = "GTFS ID"
 
 ATTRIBUTION = "Data provided by Helsinki Regional Transport(HSL HRT)"
+
+LIMIT = 1500
+SECS_IN_DAY = 24*60*60
 
 STOP_ID_QUERY =  """
     query ($name_code: String!) {
@@ -68,7 +72,7 @@ STOP_CHECK_QUERY =  """
     }
 	"""
 
-ROUTE_QUERY = """
+ROUTE_QUERY_WITH_RANGE = """
     query ($id: String!, $current_epoch: Long!, $sec_left_in_day: Int!) {
 		stop (id: $id) {
 			name
@@ -81,6 +85,39 @@ ROUTE_QUERY = """
 		  		}
 			}
 			stoptimesWithoutPatterns (startTime: $current_epoch, numberOfDepartures: 500, timeRange: $sec_left_in_day){
+				scheduledArrival
+	  			realtimeArrival
+	  			arrivalDelay
+	  			scheduledDeparture
+	  			realtimeDeparture
+	  			departureDelay
+	  			realtime
+	  			realtimeState
+	  			serviceDay
+				headsign
+				trip {
+					route {
+						shortName
+					}
+				}
+			}
+		}
+	}
+"""
+
+ROUTE_QUERY_WITH_LIMIT = """
+    query ($id: String!, $current_epoch: Long!, $limit: Int!) {
+		stop (id: $id) {
+			name
+			code
+			gtfsId
+			routes {
+		  		shortName
+		  		patterns {
+					headsign
+		  		}
+			}
+			stoptimesWithoutPatterns (startTime: $current_epoch, numberOfDepartures: $limit){
 				scheduledArrival
 	  			realtimeArrival
 	  			arrivalDelay
