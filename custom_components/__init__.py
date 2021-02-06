@@ -16,7 +16,7 @@ from .const import (
     STOP_GTFS,
     STOP_CODE,
     ROUTE,
-    ROUTE_QUERY,
+    ROUTE_QUERY_WITH_LIMIT,
     MIN_TIME_BETWEEN_UPDATES,
     COORDINATOR,
     UNDO_UPDATE_LISTENER,
@@ -27,7 +27,9 @@ from .const import (
     ALL,
     VAR_ID,
     VAR_CURR_EPOCH,
-    VAR_SECS_LEFT,
+    VAR_LIMIT,
+    LIMIT,
+    SECS_IN_DAY,
     _LOGGER
 )
 
@@ -150,6 +152,13 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
                             if arrival is None:
                                 arrival = route.get("scheduledArrival", 0)
 
+                            ## Arrival time is num of secs from midnight when the trip started.
+                            ## If the trip starts on this day and arrival time is next day (e.g late night trips)
+                            ## the arrival time shows the number of secs more than 24hrs ending up with a 
+                            ## 1 day, hh:mm:ss on the displays. This corrects it.
+                            if arrival >= SECS_IN_DAY:
+                                arrival = arrival - SECS_IN_DAY
+
                             route_dict[DICT_KEY_ARRIVAL] = str(datetime.timedelta(seconds=arrival))
                             route_dict[DICT_KEY_DEST] = route.get("headsign", "")
                             
@@ -209,18 +218,15 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
             async with timeout(10):
 
                 # Find all the trips for the day
-                now = datetime.datetime.now()
-                secs_passed = (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
-                sec_left_in_day = int((24*60*60) - secs_passed)
                 current_epoch = int(time.time())
                 variables = {
                     VAR_ID: self.gtfs_id.upper(), 
                     VAR_CURR_EPOCH: current_epoch, 
-                    VAR_SECS_LEFT: sec_left_in_day}
+                    VAR_LIMIT: LIMIT}
 
                 # Asynchronous request
                 data = await self._hass.async_add_executor_job(
-                    graph_client.execute, ROUTE_QUERY, variables
+                    graph_client.execute, ROUTE_QUERY_WITH_LIMIT, variables
                 )
 
                 self.route_data = parse_data(data, self.route)
