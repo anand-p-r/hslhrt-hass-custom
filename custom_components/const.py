@@ -19,6 +19,8 @@ STOP_CODE = "stop_code"
 STOP_NAME = "stop_name"
 STOP_GTFS = "stop_gtfs"
 ROUTE = "route"
+ROUTE_DEST = "route_destination"
+DESTINATION = "destination"
 ALL = "all"
 ERROR = "err"
 
@@ -55,6 +57,9 @@ STOP_ID_QUERY =  """
             code
 			routes {
 		  		shortName
+				patterns {
+            		headsign
+          		}  
 			}
         }
     }

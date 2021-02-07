@@ -10,12 +10,13 @@ import time
 from python_graphql_client import GraphqlClient
 
 from .const import (
-    BASE_URL,
+    BASE_URL, DESTINATION,
     DOMAIN,
     STOP_NAME,
     STOP_GTFS,
     STOP_CODE,
     ROUTE,
+    DESTINATION,
     ROUTE_QUERY_WITH_LIMIT,
     MIN_TIME_BETWEEN_UPDATES,
     COORDINATOR,
@@ -40,12 +41,14 @@ PLATFORMS = ["sensor"]
 graph_client = GraphqlClient(endpoint=BASE_URL)
 
 
-def base_unique_id(gtfs_id, route=None):
+def base_unique_id(gtfs_id, route=None, dest=None):
     """Return unique id for entries in configuration."""
-    if route is None or route.lower() == ALL:
-        return f"{gtfs_id} all"
+    if (route is not None) and (route.lower() != ALL):
+        return f"{gtfs_id} {route.upper()}"
+    elif (dest is not None) and (dest.lower() != ALL):
+        return f"{gtfs_id} {dest.upper()}"
     else:
-        return f"{gtfs_id} {route}"
+        return f"{gtfs_id} ALL"
 
 
 async def async_setup(hass: HomeAssistant, config: Config) -> bool:
@@ -104,11 +107,18 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, session, config_entry):
         """Initialize."""
 
-        _LOGGER.debug("Using Name/Code: %s and route: %s", 
-            config_entry.data[STOP_NAME], config_entry.data[ROUTE])
+        ##if config_entry.data.get(STOP_NAME, "None") is not None:
+        _LOGGER.debug("Using Name/Code: %s", config_entry.data.get(STOP_NAME, "None")) 
+
+        ##if config_entry.data.get(ROUTE, "None") is not None:
+        _LOGGER.debug("Using Route: %s", config_entry.data.get(ROUTE, "None")) 
+
+        ##if config_entry.data.get(DESTINATION, "None") is not None:
+        _LOGGER.debug("Using Destination: %s", config_entry.data.get(DESTINATION, "None")) 
 
         self.gtfs_id = config_entry.data.get(STOP_GTFS, "")
         self.route = config_entry.data.get(ROUTE, "")
+        self.dest = config_entry.data.get(DESTINATION, "")
 
         self.route_data = None
         self._hass = hass
@@ -123,7 +133,7 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self):
         """Update data via HSl HRT Open API."""
 
-        def parse_data(data, line_from_user = ""):
+        def parse_data(data=None, line_from_user=None, dest_from_user=None):
 
             parsed_data = {}
             bus_lines = {}
@@ -189,17 +199,30 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
                     return
 
             time_line_parsed_data = []
-            if line_from_user.lower() != ALL.lower():
-                if line_from_user.lower() != "":
-                    routes = parsed_data.get(DICT_KEY_ROUTES, None)
-                    if routes is not None:
-                        for rt in routes:
-                            line_in_data = rt.get(DICT_KEY_ROUTE, None)
-                            if line_in_data is not None:
-                                if line_from_user.lower() == line_in_data.lower():
-                                    time_line_parsed_data.append(rt)
+            if line_from_user is not None:
+                if line_from_user.lower() != ALL.lower():
+                    if line_from_user.lower() != "":
+                        routes = parsed_data.get(DICT_KEY_ROUTES, None)
+                        if routes is not None:
+                            for rt in routes:
+                                line_in_data = rt.get(DICT_KEY_ROUTE, None)
+                                if line_in_data is not None:
+                                    if line_from_user.lower() == line_in_data.lower():
+                                        time_line_parsed_data.append(rt)
 
-                        parsed_data[DICT_KEY_ROUTES] = time_line_parsed_data
+                            parsed_data[DICT_KEY_ROUTES] = time_line_parsed_data
+            elif dest_from_user is not None:
+                if dest_from_user.lower() != ALL.lower():
+                    if dest_from_user.lower() != "":
+                        routes = parsed_data.get(DICT_KEY_ROUTES, None)
+                        if routes is not None:
+                            for rt in routes:
+                                dest_in_data = rt.get(DICT_KEY_DEST, None)
+                                if dest_in_data is not None:
+                                    if dest_from_user.lower() in dest_in_data.lower():
+                                        time_line_parsed_data.append(rt)
+
+                            parsed_data[DICT_KEY_ROUTES] = time_line_parsed_data
             else:
                 routes = parsed_data.get(DICT_KEY_ROUTES, None)
                 if routes is not None:
@@ -229,7 +252,7 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
                     graph_client.execute, ROUTE_QUERY_WITH_LIMIT, variables
                 )
 
-                self.route_data = parse_data(data, self.route)
+                self.route_data = parse_data(data=data, line_from_user=self.route, dest_from_user=self.dest)
                 _LOGGER.debug(f"DATA: {self.route_data}")
                 
         except Exception as error:

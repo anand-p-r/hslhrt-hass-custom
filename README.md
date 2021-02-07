@@ -8,7 +8,9 @@
     3. If the files are placed correctly, it should have the hierarchy as: <HA configuration directory>/custom_components/hslhrt
     5. Restart Home Assistant
     6. Install integration from UI (Configuration --> Intergations --> + --> Search for "hsl")
-    7. Specify stop name (e.g. töölöntori) or stop code (e.g. H0209) and optionally the route number (e.g. 8) 
+    7. Specify stop name (e.g. töölöntori) or stop code (e.g. H0209). Optionally the route number (e.g. 8) or the destination can be specified as well.
+       1. Route takes precedence over destination, if specified. Both options are case in-sensitive.
+       2. In case, route and destination are not needed, leave the default values as "ALL" or "all".
 
 <br/>
 

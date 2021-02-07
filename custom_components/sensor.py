@@ -75,7 +75,14 @@ class HSLHRTRouteSensor(CoordinatorEntity):
         """Return the name of the sensor."""
         if self.coordinator is not None:
             if self.coordinator.route_data is not None:
-                return f"{self.coordinator.route_data['stop_name']}({self.coordinator.route_data['stop_code']}) {self.coordinator.route}"
+                ext = ""
+                if (self.coordinator.route is not None) and (self.coordinator.route != ALL):
+                    ext = self.coordinator.route.upper()
+                elif (self.coordinator.dest is not None) and (self.coordinator.dest != ALL):
+                    ext = self.coordinator.dest.upper()
+                else:
+                    ext = ALL
+                return f"{self.coordinator.route_data[STOP_NAME]}({self.coordinator.route_data[STOP_CODE]}) {ext}"
 
         return self._name
 
