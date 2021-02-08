@@ -20,8 +20,7 @@ from .const import (
     ALL,
     VAR_NAME_CODE,
     ROUTE,
-    DESTINATION,
-    ROUTE_DEST
+    DESTINATION
 )
 
 
@@ -40,11 +39,62 @@ async def validate_user_config(hass: core.HomeAssistant, data):
     stop_gtfs = None
     ret_route = None
     ret_dest = None
+    stops_data = {}
 
     # Check if there is a valid stop for the given name/code
     try:
-        variables = {VAR_NAME_CODE: name_code.upper()}
-        hsl_data = await graph_client.execute_async(query=STOP_ID_QUERY, variables=variables)
+        # If name is given, it is case in-sensitive. If stop code is given
+        # that is case sensitive. For e.g. Si2223 is valid stop bu si2223
+        # and SI2223 are not!
+        # Therefore we have 3 options to check:
+        # 1 --> Same code/name as given by user
+        # 2 --> Upper case code/name as given by user
+        # 3 --> Lower case code/name as given by user
+
+        # Option-1 --> As given by user
+        variables = {VAR_NAME_CODE: name_code}
+        valid_opt_count = 1
+        while (True):
+            hsl_data = await graph_client.execute_async(query=STOP_ID_QUERY, variables=variables)
+
+            data_dict = hsl_data.get("data", None)
+            if data_dict is not None:
+
+                stops_data = data_dict.get("stops", None)
+                if stops_data is not None:
+
+                    if len(stops_data) > 0:
+                        ## Reset errors
+                        errors = ""
+                        break
+                    else:
+                        _LOGGER.debug("no data in stops for %s", variables.get(VAR_NAME_CODE, "-NA-"))
+                        errors = "invalid_name_code"
+                else:
+                    _LOGGER.debug("no key stops for %s", variables.get(VAR_NAME_CODE, "-NA-"))
+                    errors = "invalid_name_code"
+            else:
+                _LOGGER.debug("no key data for %s", variables.get(VAR_NAME_CODE, "-NA-"))
+                errors = "invalid_name_code"
+
+            if valid_opt_count == 3:
+                return {
+                    STOP_CODE: stop_code,
+                    STOP_NAME: stop_name,
+                    STOP_GTFS: stop_gtfs,
+                    ROUTE: ret_route,
+                    DESTINATION: ret_dest,
+                    ERROR: errors
+                }
+            elif valid_opt_count == 1:
+                # Option-2: --> Upper case of user value
+                variables = {VAR_NAME_CODE: name_code.upper()}
+                valid_opt_count = 2
+            else:
+                # Option-3: --> Lower case of user value
+                variables = {VAR_NAME_CODE: name_code.lower()}
+                valid_opt_count = 3
+
 
     except Exception as err:
         err_string = f"Client error with message {err.message}"
@@ -60,62 +110,47 @@ async def validate_user_config(hass: core.HomeAssistant, data):
             ERROR: errors
             }
 
-    data_dict = hsl_data.get("data", None)
-
-    if data_dict is not None:
-        stops_data = data_dict.get("stops", None)
-        if stops_data is not None:
-            if len(stops_data) > 0:
-                stop_data = stops_data[0]
-                stop_gtfs = stop_data.get("gtfsId", "")
-                stop_name = stop_data.get("name", "")
-                stop_code = stop_data.get("code", "")
-                if stop_name != "" and stop_gtfs != "":
-                    ## Specific route should be checked
-                    ## Ignore destination filter
-                    if (route.lower() != ALL) or (dest.lower() != ALL):
-                        routes = stop_data.get("routes", None)
-                        if routes is not None:
-                            for rt in routes:
-                                if route.lower() != ALL:
-                                    rt_name = rt.get("shortName", "")
-                                    if rt_name != "":
-                                        if rt_name.lower() == route.lower():
-                                            ret_route = route
-                                            break
-                                else:
-                                    patterns = rt.get("patterns", None)
-                                    if patterns is not None:
-                                        break_loop = False
-                                        for pattern in patterns:
-                                            head_sign = pattern.get("headsign", "")
-                                            if head_sign != "":
-                                                if dest.lower() in head_sign.lower():
-                                                    ret_dest = head_sign
-                                                    break_loop = True
-                                                    break 
-
-                                        if break_loop:
-                                            break                              
+    stop_data = stops_data[0]
+    stop_gtfs = stop_data.get("gtfsId", "")
+    stop_name = stop_data.get("name", "")
+    stop_code = stop_data.get("code", "")
+    if stop_name != "" and stop_gtfs != "":
+        ## Specific route should be checked
+        ## Ignore destination filter
+        if (route.lower() != ALL) or (dest.lower() != ALL):
+            routes = stop_data.get("routes", None)
+            if routes is not None:
+                for rt in routes:
+                    if route.lower() != ALL:
+                        rt_name = rt.get("shortName", "")
+                        if rt_name != "":
+                            if rt_name.lower() == route.lower():
+                                ret_route = route
+                                break
                     else:
-                        ret_route = route
+                        patterns = rt.get("patterns", None)
+                        if patterns is not None:
+                            break_loop = False
+                            for pattern in patterns:
+                                head_sign = pattern.get("headsign", "")
+                                if head_sign != "":
+                                    if dest.lower() in head_sign.lower():
+                                        ret_dest = head_sign
+                                        break_loop = True
+                                        break 
 
-                    if (route.lower() != ALL) and (ret_route == None):
-                        errors = "invalid_route"
-                    else:
-                        if (dest.lower() != ALL) and (ret_dest == None):
-                            errors = "invalid_destination"
-                else:
-                    _LOGGER.error("Name or gtfs is blank")
-                    errors = "invalid_name_code"
-            else:
-                _LOGGER.error("no data in stops")
-                errors = "invalid_name_code"
+                            if break_loop:
+                                break                              
         else:
-            _LOGGER.error("no key stops")
-            errors = "invalid_name_code"
+            ret_route = route
+
+        if (route.lower() != ALL) and (ret_route == None):
+            errors = "invalid_route"
+        else:
+            if (dest.lower() != ALL) and (ret_dest == None):
+                errors = "invalid_destination"
     else:
-        _LOGGER.error("no key data")
+        _LOGGER.error("Name or gtfs is blank")
         errors = "invalid_name_code"
 
     return {
