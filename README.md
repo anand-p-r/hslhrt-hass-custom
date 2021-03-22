@@ -27,7 +27,7 @@ Sensor provides real time arrival information of a `route` (bus/tram) if availab
 <br/>
 Display HSL stops as a list also showing the upcoming route
 
-![Option-1](custom_components/resources/images/ui-option-1.jpg?raw=true)
+![Option-1](resources/images/ui-option-1.jpg?raw=true)
 <br/>
 
 #### Lovelace UI Entities Card Configuration, for Option-1:
@@ -48,7 +48,7 @@ show_header_toggle: false
 <br/>
 Display a HSL stop with attributes showing route, arrival time and destination
 
-![Option-2](custom_components/resources/images/ui-option-2.jpg?raw=true)
+![Option-2](resources/images/ui-option-2.jpg?raw=true)
 
 <br/>
 
@@ -89,7 +89,7 @@ entities:
 <br/>
 With a template sensor, more UI options are possible, such as displaying remaining time until next arrival and next two upcoming arrival times:
 
-![Option-3](custom_components/resources/images/ui-option-3.jpg?raw=true)
+![Option-3](resources/images/ui-option-3.jpg?raw=true)
 
 <br/>
 
@@ -216,7 +216,7 @@ entities:
 <br/>
 With a template sensor, show the upcoming routes at a stop as a table:
 
-![Option-4](custom_components/resources/images/ui-option-4.jpg?raw=true)
+![Option-4](resources/images/ui-option-4.jpg?raw=true)
 
 <br/>
 
