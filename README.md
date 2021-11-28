@@ -233,6 +233,36 @@ With a template sensor, show the upcoming routes at a stop as a table:
       next_route_v1530_1:
         friendly_name: Next Route - 1
         value_template: "{% if state_attr('sensor.norotie_v1530_all', 'ROUTES') != None %}
+                           {% if state_attr('sensor.norotie_v1530_all', 'ROUTES') | length > 0 %}
+                             {{ state_attr('sensor.norotie_v1530_all', 'ROUTES')[0]['ROUTE'] }}
+                           {% else %}
+                             'NA'
+                           {% endif %}
+                         {% else %}
+                           'NA'
+                         {% endif %}"
+        attribute_templates:
+          arrival_time: "{% if state_attr('sensor.norotie_v1530_all', 'ROUTES') != None %}
+                    {% if state_attr('sensor.norotie_v1530_all', 'ROUTES') | length > 0 %}
+                      {{ state_attr('sensor.norotie_v1530_all', 'ROUTES')[0]['ARRIVAL TIME'] }}
+                    {% else %}
+                      'Unavailable'
+                    {% endif %}
+                  {% else %}
+                    'Unavailable'
+                  {% endif %}"
+          destination: "{% if state_attr('sensor.norotie_v1530_all', 'ROUTES') != None %}
+                          {% if state_attr('sensor.norotie_v1530_all', 'ROUTES') | length > 0 %}
+                            {{ state_attr('sensor.norotie_v1530_all', 'ROUTES')[0]['DESTINATION'] }}
+                          {% else %}
+                            'Unavailable'
+                          {% endif %}
+                        {% else %}
+                          'Unavailable'
+                        {% endif %}"
+      next_route_v1530_2:
+        friendly_name: Next Route - 2
+        value_template: "{% if state_attr('sensor.norotie_v1530_all', 'ROUTES') != None %}
                            {% if state_attr('sensor.norotie_v1530_all', 'ROUTES') | length > 1 %}
                              {{ state_attr('sensor.norotie_v1530_all', 'ROUTES')[1]['ROUTE'] }}
                            {% else %}
@@ -260,8 +290,8 @@ With a template sensor, show the upcoming routes at a stop as a table:
                         {% else %}
                           'Unavailable'
                         {% endif %}"
-      next_route_v1530_2:
-        friendly_name: Next Route - 2
+      next_route_v1530_3:
+        friendly_name: Next Route - 3
         value_template: "{% if state_attr('sensor.norotie_v1530_all', 'ROUTES') != None %}
                            {% if state_attr('sensor.norotie_v1530_all', 'ROUTES') | length > 2 %}
                              {{ state_attr('sensor.norotie_v1530_all', 'ROUTES')[2]['ROUTE'] }}
@@ -290,8 +320,8 @@ With a template sensor, show the upcoming routes at a stop as a table:
                         {% else %}
                           'Unavailable'
                         {% endif %}"
-      next_route_v1530_3:
-        friendly_name: Next Route - 3
+      next_route_v1530_4:
+        friendly_name: Next Route - 4
         value_template: "{% if state_attr('sensor.norotie_v1530_all', 'ROUTES') != None %}
                            {% if state_attr('sensor.norotie_v1530_all', 'ROUTES') | length > 3 %}
                              {{ state_attr('sensor.norotie_v1530_all', 'ROUTES')[3]['ROUTE'] }}
@@ -320,8 +350,8 @@ With a template sensor, show the upcoming routes at a stop as a table:
                         {% else %}
                           'Unavailable'
                         {% endif %}"
-      next_route_v1530_4:
-        friendly_name: Next Route - 4
+      next_route_v1530_5:
+        friendly_name: Next Route - 5
         value_template: "{% if state_attr('sensor.norotie_v1530_all', 'ROUTES') != None %}
                            {% if state_attr('sensor.norotie_v1530_all', 'ROUTES') | length > 4 %}
                              {{ state_attr('sensor.norotie_v1530_all', 'ROUTES')[4]['ROUTE'] }}
@@ -361,41 +391,48 @@ entities:
   - sensor.next_route_v1530_2
   - sensor.next_route_v1530_3
   - sensor.next_route_v1530_4
+  - sensor.next_route_v1530_5  
 state_filter:
   - operator: '!='
     value: "'NA'"
 card:
   type: markdown
   content: >-
-    | Arrival Time ||||| Route ||||| Destination |
+    | Arrival Time &nbsp;&nbsp;&nbsp;&nbsp; | Route &nbsp;&nbsp;&nbsp;&nbsp; | Destination |
 
-    | :----------- ||||| :---- ||||| :---------- |
+    | :----------- | :---- | :---------- |
 
     | {% set n = 0 %} {% if config.entities | length > n %} {{
-    state_attr(config.entities[n].entity, 'arrival_time') }} ||||| {{
-    states(config.entities[n].entity) }} ||||| {{
+    state_attr(config.entities[n].entity, 'arrival_time') }} | {{
+    states(config.entities[n].entity) }} | {{
     state_attr(config.entities[n].entity, 'destination') }} {% endif %} |
 
     | {% set n = 1 %} {% if config.entities | length > n %} {{
-    state_attr(config.entities[n].entity, 'arrival_time') }} ||||| {{
-    states(config.entities[n].entity) }} ||||| {{
+    state_attr(config.entities[n].entity, 'arrival_time') }} | {{
+    states(config.entities[n].entity) }} | {{
     state_attr(config.entities[n].entity, 'destination') }} {% endif %} |
 
     | {% set n = 2 %} {% if config.entities | length > n %} {{
-    state_attr(config.entities[n].entity, 'arrival_time') }} ||||| {{
-    states(config.entities[n].entity) }} ||||| {{
+    state_attr(config.entities[n].entity, 'arrival_time') }} | {{
+    states(config.entities[n].entity) }} | {{
     state_attr(config.entities[n].entity, 'destination') }} {% endif %} |
 
     | {% set n = 3 %} {% if config.entities | length > n %} {{
-    state_attr(config.entities[n].entity, 'arrival_time') }} ||||| {{
-    states(config.entities[n].entity) }} ||||| {{
+    state_attr(config.entities[n].entity, 'arrival_time') }} | {{
+    states(config.entities[n].entity) }} | {{
     state_attr(config.entities[n].entity, 'destination') }} {% endif %} |
 
     | {% set n = 4 %} {% if config.entities | length > n %} {{
-    state_attr(config.entities[n].entity, 'arrival_time') }} ||||| {{
-    states(config.entities[n].entity) }} ||||| {{
+    state_attr(config.entities[n].entity, 'arrival_time') }} | {{
+    states(config.entities[n].entity) }} | {{
     state_attr(config.entities[n].entity, 'destination') }} {% endif %} |
-  title: V1530 Next Lines
+
+    | {% set n = 5 %} {% if config.entities | length > n %} {{
+    state_attr(config.entities[n].entity, 'arrival_time') }} | {{
+    states(config.entities[n].entity) }} | {{
+    state_attr(config.entities[n].entity, 'destination') }} {% endif %} |
+
+title: V1530 Next Lines
 
 ```
 
