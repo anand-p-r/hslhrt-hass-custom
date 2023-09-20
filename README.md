@@ -442,3 +442,6 @@ title: V1530 Next Lines
 
 ## Original Author
 Anand Radhakrishnan [@anand-p-r](https://github.com/anand-p-r)
+
+## Added API key support
+Mathias Backman [@fimathias](https://github.com/fimathias)
