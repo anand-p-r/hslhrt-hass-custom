@@ -4,9 +4,7 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.util import Throttle
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from homeassistant.const import (
-    ATTR_ATTRIBUTION
-)
+from homeassistant.const import ATTR_ATTRIBUTION
 
 from .const import (
     _LOGGER,
@@ -27,14 +25,13 @@ from .const import (
     DICT_KEY_DEST,
     DICT_KEY_ARRIVAL,
     ATTRIBUTION,
-    ALL
+    ALL,
 )
 
-SENSOR_TYPES = {
-    ROUTE: ["Route", None]
-}
+SENSOR_TYPES = {ROUTE: ["Route", None]}
 
 PARALLEL_UPDATES = 1
+
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the HSL HRT Sensor."""
@@ -45,11 +42,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     entity_list = []
 
     for sensor_type in SENSOR_TYPES:
-        entity_list.append(
-            HSLHRTRouteSensor(
-                name, coordinator, sensor_type
-            )
-        )
+        entity_list.append(HSLHRTRouteSensor(name, coordinator, sensor_type))
 
     async_add_entities(entity_list, False)
 
@@ -76,9 +69,13 @@ class HSLHRTRouteSensor(CoordinatorEntity):
         if self.coordinator is not None:
             if self.coordinator.route_data is not None:
                 ext = ""
-                if (self.coordinator.route is not None) and (self.coordinator.route != ALL):
+                if (self.coordinator.route is not None) and (
+                    self.coordinator.route != ALL
+                ):
                     ext = self.coordinator.route.upper()
-                elif (self.coordinator.dest is not None) and (self.coordinator.dest != ALL):
+                elif (self.coordinator.dest is not None) and (
+                    self.coordinator.dest != ALL
+                ):
                     ext = self.coordinator.dest.upper()
                 else:
                     ext = ALL
@@ -102,11 +99,13 @@ class HSLHRTRouteSensor(CoordinatorEntity):
         return self._unit_of_measurement
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Return the state attributes."""
-        
-        if self.coordinator is not None and len(self.coordinator.route_data[DICT_KEY_ROUTES]) > 0:
-            
+
+        if (
+            self.coordinator is not None
+            and len(self.coordinator.route_data[DICT_KEY_ROUTES]) > 0
+        ):
             routes = []
             for rt in self.coordinator.route_data[DICT_KEY_ROUTES][1:]:
                 dest_str = "Unavailable"
@@ -115,26 +114,35 @@ class HSLHRTRouteSensor(CoordinatorEntity):
                     dest_str = rt[DICT_KEY_DEST]
 
                 route = {
-                            ATTR_ROUTE: rt[DICT_KEY_ROUTE],
-                            ATTR_DEST: dest_str,
-                            ATTR_ARR_TIME: rt[DICT_KEY_ARRIVAL]
-                        }
+                    ATTR_ROUTE: rt[DICT_KEY_ROUTE],
+                    ATTR_DEST: dest_str,
+                    ATTR_ARR_TIME: rt[DICT_KEY_ARRIVAL],
+                }
                 routes.append(route)
 
             dest_str = "Unavailable"
-    
-            if self.coordinator.route_data[DICT_KEY_ROUTES][0][DICT_KEY_DEST] is not None:
-                dest_str = self.coordinator.route_data[DICT_KEY_ROUTES][0][DICT_KEY_DEST]
+
+            if (
+                self.coordinator.route_data[DICT_KEY_ROUTES][0][DICT_KEY_DEST]
+                is not None
+            ):
+                dest_str = self.coordinator.route_data[DICT_KEY_ROUTES][0][
+                    DICT_KEY_DEST
+                ]
 
             return {
-                ATTR_ROUTE: self.coordinator.route_data[DICT_KEY_ROUTES][0][DICT_KEY_ROUTE],
+                ATTR_ROUTE: self.coordinator.route_data[DICT_KEY_ROUTES][0][
+                    DICT_KEY_ROUTE
+                ],
                 ATTR_DEST: dest_str,
-                ATTR_ARR_TIME: self.coordinator.route_data[DICT_KEY_ROUTES][0][DICT_KEY_ARRIVAL],
+                ATTR_ARR_TIME: self.coordinator.route_data[DICT_KEY_ROUTES][0][
+                    DICT_KEY_ARRIVAL
+                ],
                 "ROUTES": routes,
                 ATTR_STOP_NAME: self.coordinator.route_data[STOP_NAME],
                 ATTR_STOP_CODE: self.coordinator.route_data[STOP_CODE],
                 ATTR_STOP_GTFS: self.coordinator.route_data[STOP_GTFS],
-                ATTR_ATTRIBUTION: ATTRIBUTION
+                ATTR_ATTRIBUTION: ATTRIBUTION,
             }
 
         return {ATTR_ATTRIBUTION: ATTRIBUTION}
@@ -157,7 +165,7 @@ class HSLHRTRouteSensor(CoordinatorEntity):
                     self._icon = "mdi:bus"
                     return
                 else:
-                    self._state = None        
+                    self._state = None
         else:
             self._state = None
 

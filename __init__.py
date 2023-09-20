@@ -10,7 +10,8 @@ import time
 from python_graphql_client import GraphqlClient
 
 from .const import (
-    BASE_URL, DESTINATION,
+    BASE_URL,
+    DESTINATION,
     DOMAIN,
     STOP_NAME,
     STOP_GTFS,
@@ -31,12 +32,12 @@ from .const import (
     VAR_LIMIT,
     LIMIT,
     SECS_IN_DAY,
-    _LOGGER
+    _LOGGER,
+    APIKEY,
 )
 
 
 PLATFORMS = ["sensor"]
-
 
 graph_client = GraphqlClient(endpoint=BASE_URL)
 
@@ -62,9 +63,7 @@ async def async_setup_entry(hass, config_entry) -> bool:
 
     websession = async_get_clientsession(hass)
 
-    coordinator = HSLHRTDataUpdateCoordinator(
-        hass, websession, config_entry
-    )
+    coordinator = HSLHRTDataUpdateCoordinator(hass, websession, config_entry)
     await coordinator.async_refresh()
 
     if not coordinator.last_update_success:
@@ -108,17 +107,20 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
         """Initialize."""
 
         ##if config_entry.data.get(STOP_NAME, "None") is not None:
-        _LOGGER.debug("Using Name/Code: %s", config_entry.data.get(STOP_NAME, "None")) 
+        _LOGGER.debug("Using Name/Code: %s", config_entry.data.get(STOP_NAME, "None"))
 
         ##if config_entry.data.get(ROUTE, "None") is not None:
-        _LOGGER.debug("Using Route: %s", config_entry.data.get(ROUTE, "None")) 
+        _LOGGER.debug("Using Route: %s", config_entry.data.get(ROUTE, "None"))
 
         ##if config_entry.data.get(DESTINATION, "None") is not None:
-        _LOGGER.debug("Using Destination: %s", config_entry.data.get(DESTINATION, "None")) 
+        _LOGGER.debug(
+            "Using Destination: %s", config_entry.data.get(DESTINATION, "None")
+        )
 
         self.gtfs_id = config_entry.data.get(STOP_GTFS, "")
         self.route = config_entry.data.get(ROUTE, "")
         self.dest = config_entry.data.get(DESTINATION, "")
+        self.apikey = config_entry.data.get(APIKEY, "")
 
         self.route_data = None
         self._hass = hass
@@ -129,12 +131,10 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
             hass, _LOGGER, name=DOMAIN, update_interval=MIN_TIME_BETWEEN_UPDATES
         )
 
-
     async def _async_update_data(self):
         """Update data via HSl HRT Open API."""
 
         def parse_data(data=None, line_from_user=None, dest_from_user=None):
-
             parsed_data = {}
             bus_lines = {}
 
@@ -144,7 +144,6 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
                 hsl_stop_data = graph_data.get("stop", None)
 
                 if hsl_stop_data is not None:
-
                     parsed_data[STOP_NAME] = hsl_stop_data.get("name", "")
                     parsed_data[STOP_CODE] = hsl_stop_data.get("code", "")
                     parsed_data[STOP_GTFS] = hsl_stop_data.get("gtfsId", "")
@@ -153,7 +152,6 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
                     route_data = hsl_stop_data.get("stoptimesWithoutPatterns", None)
 
                     if route_data is not None:
-
                         routes = []
                         for route in route_data:
                             route_dict = {}
@@ -164,14 +162,16 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
 
                             ## Arrival time is num of secs from midnight when the trip started.
                             ## If the trip starts on this day and arrival time is next day (e.g late night trips)
-                            ## the arrival time shows the number of secs more than 24hrs ending up with a 
+                            ## the arrival time shows the number of secs more than 24hrs ending up with a
                             ## 1 day, hh:mm:ss on the displays. This corrects it.
                             if arrival >= SECS_IN_DAY:
                                 arrival = arrival - SECS_IN_DAY
 
-                            route_dict[DICT_KEY_ARRIVAL] = str(datetime.timedelta(seconds=arrival))
+                            route_dict[DICT_KEY_ARRIVAL] = str(
+                                datetime.timedelta(seconds=arrival)
+                            )
                             route_dict[DICT_KEY_DEST] = route.get("headsign", "")
-                            
+
                             route_dict[DICT_KEY_ROUTE] = ""
                             if route_dict[DICT_KEY_DEST] != "":
                                 for bus in bus_lines:
@@ -186,9 +186,14 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
                                     if trip != "":
                                         trip_route = trip.get("route", "")
                                         if trip_route != "":
-                                            trip_route_shortname = trip_route.get("shortName", "")
+                                            trip_route_shortname = trip_route.get(
+                                                "shortName", ""
+                                            )
                                             if trip_route_shortname != "":
-                                                if trip_route_shortname.lower() == line.lower():
+                                                if (
+                                                    trip_route_shortname.lower()
+                                                    == line.lower()
+                                                ):
                                                     route_dict[DICT_KEY_ROUTE] = line
 
                             routes.append(route_dict)
@@ -239,22 +244,26 @@ class HSLHRTDataUpdateCoordinator(DataUpdateCoordinator):
 
         try:
             async with timeout(10):
-
                 # Find all the trips for the day
                 current_epoch = int(time.time())
                 variables = {
-                    VAR_ID: self.gtfs_id.upper(), 
-                    VAR_CURR_EPOCH: current_epoch, 
-                    VAR_LIMIT: LIMIT}
+                    VAR_ID: self.gtfs_id.upper(),
+                    VAR_CURR_EPOCH: current_epoch,
+                    VAR_LIMIT: LIMIT,
+                }
+
+                graph_client.headers["digitransit-subscription-key"] = self.apikey
 
                 # Asynchronous request
                 data = await self._hass.async_add_executor_job(
                     graph_client.execute, ROUTE_QUERY_WITH_LIMIT, variables
                 )
 
-                self.route_data = parse_data(data=data, line_from_user=self.route, dest_from_user=self.dest)
+                self.route_data = parse_data(
+                    data=data, line_from_user=self.route, dest_from_user=self.dest
+                )
                 _LOGGER.debug(f"DATA: {self.route_data}")
-                
+
         except Exception as error:
             raise UpdateFailed(error) from error
             return {}
