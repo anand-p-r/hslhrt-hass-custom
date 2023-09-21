@@ -1,6 +1,6 @@
 {
-  "domain": "hsl",
-  "version": "0.3.5",
+  "domain": "hslhrt",
+  "version": "0.4",
   "name": "Helsinki Regional Transport",
   "documentation": "https://github.com/anand-p-r/hslhrt-hass-custom",
   "requirements": [
