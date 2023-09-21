@@ -4,8 +4,8 @@ from datetime import timedelta
 
 _LOGGER = logging.getLogger(__package__)
 
-DOMAIN = "hsl"
-NAME = DEFAULT_NAME = "HSL"
+DOMAIN = "hslhrt"
+NAME = DEFAULT_NAME = "HSLHRT"
 MANUFACTURER = "Helsinki Regional Transport Authority"
 
 COORDINATOR = "coordinator"
