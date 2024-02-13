@@ -14,6 +14,7 @@
        1. Stop name is case in-sensitive, but stop code is not. E.g. töölöntori and Töölöntori are OK. H0209 is OK. h0209 is NOT OK.
        2. Route takes precedence over destination, if specified. Both options are case in-sensitive.
        3. In case, route and destination are not needed, leave the default values as "ALL" or "all".
+       4. Add the API-key generated from the Digitransit site.
 
 <br/>
 
