@@ -1,25 +1,26 @@
 {
-  "config": {
-    "step": {
-      "user": {
-        "description": "HSL-HRT Configuration Parameters",
-        "title": "Helsinki Regional Transport",
-        "data": {
-          "user_name_code": "STOP Name / Code",
-          "route": "Route",
-          "destination": "Destination"
+    "config": {
+        "abort": {
+            "already_configured": "Already configured stop/route",
+            "invalid_destination": "Destination is invalid!",
+            "invalid_name_code": "Stop Name or Stop Code is invalid!",
+            "invalid_route": "Route is invalid!"
+        },
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "unknown": "Unexpected error"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "apikey": "API key",
+                    "destination": "Destination",
+                    "route": "Route",
+                    "user_name_code": "STOP Name / Code"
+                },
+                "description": "HSL-HRT Configuration Parameters",
+                "title": "Helsinki Regional Transport"
+            }
         }
-      }
-    },
-    "error": {
-      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
-      "unknown": "[%key:common::config_flow::error::unknown%]"
-    },
-    "abort": {
-      "already_configured": "Already configured stop/route",
-      "invalid_name_code": "Stop Name or Stop Code is invalid!",
-      "invalid_route": "Route is invalid!",
-      "invalid_destination": "Destination is invalid!"
     }
-  }
 }

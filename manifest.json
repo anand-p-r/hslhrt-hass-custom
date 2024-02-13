@@ -1,6 +1,6 @@
 {
   "domain": "hslhrt",
-  "version": "0.3.5",
+  "version": "0.4",
   "name": "Helsinki Regional Transport",
   "documentation": "https://github.com/anand-p-r/hslhrt-hass-custom",
   "requirements": [
@@ -8,7 +8,8 @@
   ],
   "dependencies": [],
   "codeowners": [
-    "@anand-p-r"
+    "@anand-p-r",
+    "@fimathias"
   ],
   "issue_tracker": "https://github.com/anand-p-r/hslhrt-hass-custom/issues",
   "config_flow": true

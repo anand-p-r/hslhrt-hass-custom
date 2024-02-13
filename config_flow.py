@@ -20,8 +20,11 @@ from .const import (
     ALL,
     VAR_NAME_CODE,
     ROUTE,
-    DESTINATION
+    DESTINATION,
+    APIKEY,
 )
+
+api_key = None
 
 
 async def validate_user_config(hass: core.HomeAssistant, data):
@@ -32,6 +35,7 @@ async def validate_user_config(hass: core.HomeAssistant, data):
     name_code = data[NAME_CODE]
     route = data[ROUTE]
     dest = data[DESTINATION]
+    apikey = data[APIKEY]
 
     errors = ""
     stop_code = None
@@ -54,28 +58,36 @@ async def validate_user_config(hass: core.HomeAssistant, data):
         # Option-1 --> As given by user
         variables = {VAR_NAME_CODE: name_code}
         valid_opt_count = 1
-        while (True):
-            hsl_data = await graph_client.execute_async(query=STOP_ID_QUERY, variables=variables)
+        while True:
+            graph_client.headers["digitransit-subscription-key"] = apikey
+            hsl_data = await graph_client.execute_async(
+                query=STOP_ID_QUERY, variables=variables
+            )
 
             data_dict = hsl_data.get("data", None)
             if data_dict is not None:
-
                 stops_data = data_dict.get("stops", None)
                 if stops_data is not None:
-
                     if len(stops_data) > 0:
                         ## Reset errors
                         errors = ""
                         break
                     else:
-                        _LOGGER.debug("no data in stops for %s", variables.get(VAR_NAME_CODE, "-NA-"))
-                        errors = "invalid_name_code"
+                        _LOGGER.debug(
+                            "no data in stops for %s",
+                            variables.get(VAR_NAME_CODE, "-NA-"),
+                        )
+                        errors = "invalid_name_code 1"
                 else:
-                    _LOGGER.debug("no key stops for %s", variables.get(VAR_NAME_CODE, "-NA-"))
-                    errors = "invalid_name_code"
+                    _LOGGER.debug(
+                        "no key stops for %s", variables.get(VAR_NAME_CODE, "-NA-")
+                    )
+                    errors = "invalid_name_code 2"
             else:
-                _LOGGER.debug("no key data for %s", variables.get(VAR_NAME_CODE, "-NA-"))
-                errors = "invalid_name_code"
+                _LOGGER.debug(
+                    "no key data for %s", variables.get(VAR_NAME_CODE, "-NA-")
+                )
+                errors = "invalid_name_code 3"
 
             if valid_opt_count == 3:
                 return {
@@ -84,7 +96,8 @@ async def validate_user_config(hass: core.HomeAssistant, data):
                     STOP_GTFS: stop_gtfs,
                     ROUTE: ret_route,
                     DESTINATION: ret_dest,
-                    ERROR: errors
+                    ERROR: errors,
+                    APIKEY: apikey,
                 }
             elif valid_opt_count == 1:
                 # Option-2: --> Upper case of user value
@@ -95,20 +108,20 @@ async def validate_user_config(hass: core.HomeAssistant, data):
                 variables = {VAR_NAME_CODE: name_code.lower()}
                 valid_opt_count = 3
 
-
     except Exception as err:
         err_string = f"Client error with message {err.message}"
         errors = "client_connect_error"
         _LOGGER.error(err_string)
 
         return {
-            STOP_CODE: None, 
-            STOP_NAME: None, 
-            STOP_GTFS: None, 
+            STOP_CODE: None,
+            STOP_NAME: None,
+            STOP_GTFS: None,
             ROUTE: None,
             DESTINATION: None,
-            ERROR: errors
-            }
+            ERROR: errors,
+            APIKEY: apikey,
+        }
 
     stop_data = stops_data[0]
     stop_gtfs = stop_data.get("gtfsId", "")
@@ -137,10 +150,10 @@ async def validate_user_config(hass: core.HomeAssistant, data):
                                     if dest.lower() in head_sign.lower():
                                         ret_dest = head_sign
                                         break_loop = True
-                                        break 
+                                        break
 
                             if break_loop:
-                                break                              
+                                break
         else:
             ret_route = route
 
@@ -151,7 +164,7 @@ async def validate_user_config(hass: core.HomeAssistant, data):
                 errors = "invalid_destination"
     else:
         _LOGGER.error("Name or gtfs is blank")
-        errors = "invalid_name_code"
+        errors = "invalid_name_code 4"
 
     return {
         STOP_CODE: stop_code,
@@ -159,7 +172,8 @@ async def validate_user_config(hass: core.HomeAssistant, data):
         STOP_GTFS: stop_gtfs,
         ROUTE: ret_route,
         DESTINATION: ret_dest,
-        ERROR: errors
+        ERROR: errors,
+        APIKEY: apikey,
     }
 
 
@@ -174,21 +188,21 @@ class HSLHRTConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         # Display an option for the user to provide Stop Name/Code for the integration
         errors = {}
         valid = {}
-        
-        if user_input is not None:
 
+        if user_input is not None:
             valid = await validate_user_config(self.hass, user_input)
             await self.async_set_unique_id(
                 base_unique_id(valid[STOP_GTFS], valid[ROUTE], valid[DESTINATION])
             )
             self._abort_if_unique_id_configured()
             if valid.get(ERROR, "") == "":
-
                 title = ""
                 if valid[ROUTE] is not None:
                     title = f"{valid[STOP_NAME]}({valid[STOP_CODE]}) {valid[ROUTE]}"
                 elif valid[DESTINATION] is not None:
-                    title = f"{valid[STOP_NAME]}({valid[STOP_CODE]}) {valid[DESTINATION]}"
+                    title = (
+                        f"{valid[STOP_NAME]}({valid[STOP_CODE]}) {valid[DESTINATION]}"
+                    )
                 else:
                     title = f"{valid[STOP_NAME]}({valid[STOP_CODE]}) ALL"
                 return self.async_create_entry(title=title, data=valid)
@@ -201,7 +215,8 @@ class HSLHRTConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(NAME_CODE, default=""): str,
                 vol.Required(ROUTE, default="ALL"): str,
-                vol.Required(DESTINATION, default="ALL"): str
+                vol.Required(DESTINATION, default="ALL"): str,
+                vol.Required(APIKEY, default=""): str,
             }
         )
 

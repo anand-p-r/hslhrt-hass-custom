@@ -23,6 +23,7 @@ ROUTE_DEST = "route_destination"
 DESTINATION = "destination"
 ALL = "all"
 ERROR = "err"
+APIKEY = "apikey"
 
 # Graphql variables
 VAR_NAME_CODE = "name_code"
@@ -47,9 +48,9 @@ ATTR_STOP_GTFS = "GTFS ID"
 ATTRIBUTION = "Data provided by Helsinki Regional Transport(HSL HRT)"
 
 LIMIT = 1500
-SECS_IN_DAY = 24*60*60
+SECS_IN_DAY = 24 * 60 * 60
 
-STOP_ID_QUERY =  """
+STOP_ID_QUERY = """
     query ($name_code: String!) {
         stops (name: $name_code) {
             gtfsId
@@ -59,13 +60,13 @@ STOP_ID_QUERY =  """
 		  		shortName
 				patterns {
             		headsign
-          		}  
+          		}
 			}
         }
     }
 	"""
 
-STOP_CHECK_QUERY =  """
+STOP_CHECK_QUERY = """
     query ($id: String!) {
         stop (id: $id) {
             name
